@@ -52,7 +52,11 @@ app.post('/users', (req, res) => {
 });
 
 app.get('/todos', checksExistsUserAccount, (req, res) => {
-  // Complete aqui
+  const { username } = req;
+
+	const user = users.find((user) => user.username === username);
+
+	return res.json(user.todos);
 });
 
 app.post('/todos', checksExistsUserAccount, (req, res) => {
