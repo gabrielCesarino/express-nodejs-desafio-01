@@ -39,7 +39,7 @@ app.post('/users', (req, res) => {
 	}
 
 	const newUser = {
-		id: uuidv4,
+		id: uuidv4(),
 		name,
 		username,
 		todos: []
@@ -47,7 +47,7 @@ app.post('/users', (req, res) => {
 
 	users.push(newUser);
 
-	return res.status(201).json(newUser);
+	return res.send(newUser);
 
 });
 
@@ -66,7 +66,7 @@ app.post('/todos', checksExistsUserAccount, (req, res) => {
 	const user = users.find((user) => user.username === username);
 
 	const newTodo = {
-		id: uuidv4,
+		id: uuidv4(),
 		title,
 		done: false,
 		deadline: new Date(deadline),
@@ -75,19 +75,87 @@ app.post('/todos', checksExistsUserAccount, (req, res) => {
 
 	user.todos.push(newTodo);
 
-	res.status(201).json(newTodo);
+	res.status(201).send(newTodo);
 });
 
 app.put('/todos/:id', checksExistsUserAccount, (req, res) => {
-  // Complete aqui
+  const { username } = req;
+	const { title, deadline } = req.body;
+	const { id } = req.params;
+
+	const user = users.find((user) => user.username === username);
+	const todo = user.todos.some((todo) => todo.id === id );
+	let todoIndex;
+
+	if(!todo) {
+		return res.status(404).json({
+			error: "Todo não encontrado!"
+		})
+	}
+
+	const updatedTodos = user.todos.map((todo, i) => {
+		if(todo.id === id) {
+			todoIndex = i;
+			return {
+				...todo,
+				title,
+				deadline
+			}
+		}else {
+			return todo
+		}
+	})
+
+	user.todos = updatedTodos;
+	return res.status(200).json(user.todos[todoIndex]);
 });
 
 app.patch('/todos/:id/done', checksExistsUserAccount, (req, res) => {
-  // Complete aqui
+	const { username } = req;
+	const { id } = req.params;
+	let todoIndex;
+
+	const user = users.find((user) => user.username === username);
+	const todo = user.todos.some((todo) => todo.id === id );
+
+	if(!todo) {
+		return res.status(404).json({
+			error: "Todo não encontrado!"
+		})
+	}
+
+	const updatedTodos = user.todos.map((todo, i) => {
+		if(todo.id === id) {
+			todoIndex = i;
+			return {
+				...todo,
+				done: true,
+			}
+		}else {
+			return todo
+		}
+	})
+
+	user.todos = updatedTodos;
+
+	return res.status(200).json(user.todos[todoIndex]);
 });
 
 app.delete('/todos/:id', checksExistsUserAccount, (req, res) => {
-  // Complete aqui
+  const { username } = req;
+	const { id } = req.params;
+
+	const user = users.find((user) => user.username === username);
+	const todo = user.todos.find((todo) => todo.id === id);
+
+	if(!todo) {
+		res.status(404).json({
+			error: "Todo não encontrado!"
+		})
+	}
+
+	user.todos.splice(todo, 1);
+	res.status(204).json(user.todos);
 });
 
 module.exports = app;
